@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graphite — Photo to Pencil Sketch</title>
+<meta name="description" content="Turn any photo into a realistic hand-drawn pencil sketch.">
+<link rel="stylesheet" href="/app.css">
+<script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="/"><i></i>Graphite</a>
+    <div class="head-r">
+      <nav class="nav">
+        <a class="on" href="/">Studio</a>
+        <a href="/gallery.html">My Sketches<span class="badge" id="navCount">0</span></a>
+      </nav>
+      <a class="btn cta" href="#studio">✎ Start sketching</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow hi">Photo → Pencil Sketch Studio</span>
+    <h1><span class="w">Your</span> <span class="w">photos,</span> <em><span class="w">drawn</span> <span class="w">by</span> <span class="w">hand.</span></em></h1>
+    <svg class="squig" viewBox="0 0 300 14" aria-hidden="true"><path id="squig" d="M4 8 Q40 -2 76 8 T148 8 T220 8 T296 8" pathLength="1"/></svg>
+    <p class="hi">Graphite, charcoal, coloured pencil and crosshatch — with real paper grain and pencil tooth, so it looks like it came off a sketchbook.</p>
+    <div class="cta-row">
+      <a class="btn hi" href="#studio">Start sketching</a>
+      <a class="btn ghost hi" href="/gallery.html">My Sketches</a>
+    </div>
+    <div class="chips"><span class="hi">4 pencil styles</span><span class="hi">Real paper texture</span><span class="hi">Before / after slider</span><span class="hi">Private &amp; saved in your browser</span></div>
+    <a class="scroll-hint hi" href="#studio" aria-label="Scroll to the studio"><span>Scroll</span><i class="arrow">↓</i></a>
+  </section>
+
+  <section class="studio" id="studio">
+    <div class="grid">
+      <aside class="card reveal" data-from="l">
+        <h2><b class="num">1</b>Photo</h2>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload photo">
+          <b id="dropT">Drop a photo or click to browse</b><span>JPG, PNG, WEBP · up to 12 MB</span>
+          <input type="file" id="file" accept="image/*" hidden>
+        </div>
+        <h2 class="mt"><b class="num">2</b>Style</h2>
+        <div class="styles" id="styles">
+          <button class="st" data-s="graphite" aria-pressed="true">Graphite<small>Classic HB pencil</small></button>
+          <button class="st" data-s="charcoal" aria-pressed="false">Charcoal<small>Deep, smudgy</small></button>
+          <button class="st" data-s="colored" aria-pressed="false">Colour Pencil<small>Soft tinted</small></button>
+          <button class="st" data-s="crosshatch" aria-pressed="false">Crosshatch<small>Ink-style lines</small></button>
+        </div>
+        <h2><b class="num">3</b>Fine tune</h2>
+        <div class="ctl"><label>Intensity <span id="iv">50</span></label><input type="range" id="intensity" min="0" max="100" value="50"></div>
+        <div class="ctl"><label>Detail <span id="dv">50</span></label><input type="range" id="detail" min="0" max="100" value="50"></div>
+        <label class="sw">Paper texture <input type="checkbox" id="paper" checked></label>
+        <button class="btn" id="go" disabled>Create sketch</button>
+      </aside>
+
+      <section class="card stage reveal" data-from="r" id="stage">
+        <div class="empty" id="empty">
+          <svg viewBox="0 0 120 80" fill="none" stroke="#e8b86a" stroke-width="2" stroke-linecap="round"><rect x="8" y="10" width="104" height="60" rx="8" opacity=".5"/><path d="M20 58l24-24 18 18 14-12 24 18"/><circle cx="84" cy="28" r="6"/></svg>
+          <p>Upload a photo to begin. Portraits, pets and landscapes with good light work best.</p>
+        </div>
+
+        <div class="cmp hid" id="cmp" title="Double-click for fullscreen">
+          <img id="before" alt="Original photo" draggable="false">
+          <img id="after" class="after" alt="Pencil sketch result" draggable="false">
+          <div class="bar"></div>
+          <span class="lbl" style="left:12px">Photo</span><span class="lbl" style="right:12px">Sketch</span>
+          <input type="range" id="pos" min="0" max="100" value="50" step=".1" aria-label="Compare before and after">
+          <button class="fsx" id="fsx" aria-label="Exit fullscreen">✕</button>
+        </div>
+
+        <div class="actions hid" id="actions">
+          <a class="btn" id="dl" download="sketch.png">Download PNG</a>
+          <button class="btn ghost" id="fs">⛶ Fullscreen</button>
+          <button class="btn ghost" id="save">Save to My Sketches</button>
+          <button class="btn danger hid" id="del">Delete saved</button>
+          <button class="btn ghost" id="again">New photo</button>
+        </div>
+
+        <div class="load" id="load">
+          <svg width="120" height="50" viewBox="0 0 120 50"><path d="M5 12 Q60 0 115 12"/><path d="M5 25 Q60 13 115 25"/><path d="M5 38 Q60 26 115 38"/></svg>
+          <span id="loadT">Sharpening the pencil…</span>
+        </div>
+      </section>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">Graphite · Your photo is never stored on the server. Saved sketches live only in this browser.</footer>
+<div class="toast" id="toast" role="alert"></div>
+
+<script src="/store.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const M = RM ? null : window.Motion;
+const EASE = [0.22, 1, 0.36, 1];
+if (M) document.documentElement.classList.add("js-motion");
+const st = {file: null, style: "graphite", url: null, blob: null, busy: false, savedId: null, prevPos: null};
+const badge = pop => { $("navCount").textContent = Store.count(); if (pop && M) M.animate("#navCount", {scale: [1, 1.7, 1]}, {duration: 0.45}); };
+badge();
+
+// ---------- Motion: intro, scroll reveals, ambient loops ----------
+function intro() {
+  M.animate("header.site-head", {y: [-70, 0], opacity: [0, 1]}, {duration: 0.6, ease: EASE});
+  M.animate(".eyebrow", {opacity: [0, 1], y: [14, 0], scale: [0.9, 1]}, {delay: 0.15, duration: 0.6, ease: EASE});
+  M.animate(".hero .w", {opacity: [0, 1], y: [46, 0], filter: ["blur(10px)", "blur(0px)"]},
+            {delay: M.stagger(0.07, {startDelay: 0.3}), duration: 0.8, ease: EASE});
+  M.animate("#squig", {strokeDashoffset: [1, 0]}, {delay: 1.05, duration: 0.9, ease: "easeInOut"});
+  M.animate(".hero p.hi", {opacity: [0, 1], y: [16, 0]}, {delay: 0.85, duration: 0.7, ease: EASE});
+  M.animate(".cta-row .hi", {opacity: [0, 1], y: [16, 0], scale: [0.9, 1]},
+            {delay: M.stagger(0.1, {startDelay: 1.05}), duration: 0.55, ease: EASE});
+  M.animate(".chips .hi", {opacity: [0, 1], y: [14, 0], scale: [0.85, 1]},
+            {delay: M.stagger(0.08, {startDelay: 1.25}), duration: 0.5, ease: EASE});
+  M.animate(".scroll-hint", {opacity: [0, 1]}, {delay: 1.9, duration: 0.8});
+  // ambient loops
+  M.animate(".scroll-hint .arrow", {y: [0, 8, 0]}, {delay: 2, duration: 1.6, repeat: Infinity, ease: "easeInOut"});
+  M.animate(".b1", {x: [0, 60, 0], y: [0, 40, 0]}, {duration: 16, repeat: Infinity, ease: "easeInOut"});
+  M.animate(".b2", {x: [0, -70, 0], y: [0, -30, 0]}, {duration: 20, repeat: Infinity, ease: "easeInOut"});
+  M.animate(".empty svg", {y: [0, -10, 0]}, {duration: 3.4, repeat: Infinity, ease: "easeInOut"});
+  // cards slide in when scrolled into view
+  M.inView(".reveal", (a) => {
+    const el = a instanceof Element ? a : a.target;
+    M.animate(el, {opacity: [0, 1], x: [el.dataset.from === "r" ? 40 : -40, 0]}, {duration: 0.8, ease: EASE})
+      .then(() => { el.style.transform = ""; });            // keep fixed-position fullscreen fallback working
+  });
+}
+try { M && intro(); } catch { document.documentElement.classList.remove("js-motion"); }
+setTimeout(() => document.documentElement.classList.remove("js-motion"), 7000);   // safety net
+
+// ---------- jump to the studio (header button, hero button, scroll hint) ----------
+function goStudio(e) {
+  e.preventDefault();
+  $("studio").scrollIntoView({behavior: RM ? "auto" : "smooth", block: "start"});
+  if (M) setTimeout(() => M.animate("#drop",
+    {boxShadow: ["0 0 0 0 #e8b86a00", "0 0 0 7px #e8b86a55", "0 0 0 0 #e8b86a00"]}, {duration: 1.2}), 750);
+}
+document.querySelectorAll('a[href="#studio"]').forEach(a => a.onclick = goStudio);
+
+function toast(msg, ok) {
+  const t = $("toast"); t.textContent = msg; t.className = "toast" + (ok ? " ok" : ""); t.style.display = "block";
+  M && M.animate(t, {opacity: [0, 1], y: [12, 0]}, {duration: 0.3});
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = "none", 3800);
+}
+function setPos(v) { $("cmp").style.setProperty("--pos", v); $("pos").value = v; }
+function resetSaved() {
+  st.savedId = null; $("save").textContent = "Save to My Sketches"; $("save").disabled = false; $("del").classList.add("hid");
+}
+
+function pick(f) {
+  if (!f) return;
+  if (!f.type.startsWith("image/")) return toast("Please choose an image file.");
+  if (f.size > 12 * 1024 * 1024) return toast("Image is larger than 12 MB.");
+  st.file = f; st.blob = null; resetSaved();
+  $("dropT").textContent = f.name; $("go").disabled = false;
+  const u = URL.createObjectURL(f), im = $("before");
+  im.onload = () => {
+    const c = $("cmp"), r = im.naturalWidth / im.naturalHeight;
+    c.style.aspectRatio = r; c.style.width = `min(100%, calc(72vh * ${r}))`;
+    $("empty").classList.add("hid"); c.classList.remove("hid");
+    $("after").removeAttribute("src"); $("after").classList.add("hid"); $("actions").classList.add("hid");
+    setPos(100);
+    M && M.animate(c, {opacity: [0, 1], scale: [0.95, 1]}, {duration: 0.55, ease: EASE});
+  };
+  im.src = u;
+}
+
+async function run() {
+  if (!st.file || st.busy) return;
+  st.busy = true; $("go").disabled = true; $("load").classList.add("on");
+  const msgs = ["Sharpening the pencil…", "Laying down graphite…", "Adding paper grain…", "Smudging the shadows…"];
+  let i = 0; const iv = setInterval(() => $("loadT").textContent = msgs[++i % msgs.length], 1400);
+  const fd = new FormData();
+  fd.append("file", st.file); fd.append("style", st.style);
+  fd.append("intensity", $("intensity").value); fd.append("detail", $("detail").value);
+  fd.append("paper", $("paper").checked);
+  try {
+    const r = await fetch("/api/sketch", {method: "POST", body: fd});
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Something went wrong");
+    const blob = await r.blob();
+    if (st.url) URL.revokeObjectURL(st.url);
+    st.blob = blob; st.url = URL.createObjectURL(blob); resetSaved();
+    const a = $("after"); a.onload = reveal; a.src = st.url;
+    $("dl").href = st.url; $("dl").download = `sketch-${st.style}.png`;
+  } catch (e) { toast(e.message); }
+  finally { clearInterval(iv); st.busy = false; $("go").disabled = false; $("load").classList.remove("on"); }
+}
+function reveal() {
+  $("after").classList.remove("hid"); $("actions").classList.remove("hid");
+  if (M) {
+    M.animate(100, 50, {duration: 1.4, ease: [0.65, 0, 0.35, 1], onUpdate: setPos});
+    M.animate("#actions .btn", {opacity: [0, 1], y: [14, 0]}, {delay: M.stagger(0.07, {startDelay: 0.9}), duration: 0.45, ease: EASE});
+  } else setPos(50);
+}
+
+// ---------- save / delete (localStorage) ----------
+async function save() {
+  if (!st.blob || st.savedId) return;
+  $("save").disabled = true;
+  try {
+    const it = await Store.saveBlob(st.blob, {
+      name: st.file.name, style: st.style,
+      intensity: +$("intensity").value, detail: +$("detail").value
+    });
+    st.savedId = it.id; $("save").textContent = "Saved ✓"; $("del").classList.remove("hid");
+    M && M.animate("#del", {opacity: [0, 1], scale: [0.8, 1]}, {duration: 0.35});
+    badge(true); toast("Saved to My Sketches", true);
+  } catch (e) {
+    $("save").disabled = false;
+    toast(e && e.name === "QuotaExceededError"
+      ? "Browser storage is full — delete some sketches in My Sketches first."
+      : "Could not save this sketch.");
+  }
+}
+function removeSaved() {
+  if (!st.savedId) return;
+  Store.remove(st.savedId); resetSaved(); badge(true); toast("Deleted from My Sketches", true);
+}
+
+// ---------- fullscreen ----------
+const inFS = () => document.fullscreenElement || $("cmp").classList.contains("fs-fb");
+function enterFS() {
+  if ($("after").classList.contains("hid")) return;
+  const c = $("cmp"); st.prevPos = $("pos").value; setPos(0);          // show the full sketch
+  const fb = () => c.classList.add("fs-fb");                           // fallback (e.g. iPhone Safari)
+  try { c.requestFullscreen ? Promise.resolve(c.requestFullscreen()).catch(fb) : fb(); } catch { fb(); }
+}
+function exitFS() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  $("cmp").classList.remove("fs-fb");
+  if (st.prevPos !== null) { setPos(st.prevPos); st.prevPos = null; }
+}
+
+// ---------- events ----------
+const drop = $("drop");
+drop.onclick = () => $("file").click();
+drop.onkeydown = e => (e.key === "Enter" || e.key === " ") && $("file").click();
+$("file").onchange = e => pick(e.target.files[0]);
+["dragenter", "dragover"].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.add("on"); }));
+["dragleave", "drop"].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.remove("on"); }));
+drop.addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+$("styles").onclick = e => {
+  const b = e.target.closest(".st"); if (!b) return;
+  document.querySelectorAll(".st").forEach(x => x.setAttribute("aria-pressed", x === b));
+  st.style = b.dataset.s;
+  M && M.animate(b, {scale: [0.92, 1]}, {type: "spring", stiffness: 420, damping: 14});
+};
+$("intensity").oninput = e => $("iv").textContent = e.target.value;
+$("detail").oninput = e => $("dv").textContent = e.target.value;
+$("pos").oninput = e => $("cmp").style.setProperty("--pos", e.target.value);
+$("go").onclick = run;
+$("again").onclick = () => $("file").click();
+$("save").onclick = save;
+$("del").onclick = removeSaved;
+$("fs").onclick = enterFS;
+$("fsx").onclick = exitFS;
+$("cmp").ondblclick = () => inFS() ? exitFS() : enterFS();
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) exitFS(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && inFS()) exitFS(); });
+</script>
+</body>
+</html>

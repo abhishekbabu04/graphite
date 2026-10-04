@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Sketches — Graphite</title>
+<link rel="stylesheet" href="/app.css">
+<script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="/"><i></i>Graphite</a>
+    <nav class="nav">
+      <a href="/">Studio</a>
+      <a class="on" href="/gallery.html">My Sketches<span class="badge" id="navCount">0</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="g-top">
+    <div>
+      <h1 class="page-title">My Sketches</h1>
+      <p class="sub" id="usage"></p>
+    </div>
+    <button class="btn danger hid" id="clearAll">Delete all</button>
+  </div>
+  <div class="g-grid" id="grid"></div>
+  <div class="empty-big hid" id="empty">
+    <p>No saved sketches yet.</p>
+    <a class="btn" href="/">Create your first sketch</a>
+  </div>
+</main>
+
+<footer class="site-foot">Saved sketches live only in this browser (localStorage). Clearing site data will remove them.</footer>
+
+<div class="lb" id="lb"><img id="lbImg" alt="Sketch preview"><button class="fsx" id="lbX" aria-label="Close">✕</button></div>
+
+<script src="/store.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const M = window.Motion;
+const LABEL = {graphite: "Graphite", charcoal: "Charcoal", colored: "Colour Pencil", crosshatch: "Crosshatch"};
+const fmt = t => new Date(t).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
+
+function card(it) {
+  const d = document.createElement("div"); d.className = "g-card";
+
+  const im = new Image(); im.src = it.img; im.alt = "Saved sketch"; im.loading = "lazy";
+  im.onclick = () => openLB(it.img);
+
+  const meta = document.createElement("div"); meta.className = "g-meta";
+  const b = document.createElement("b"); b.textContent = it.name || "Sketch";
+  const s = document.createElement("span"); s.textContent = `${LABEL[it.style] || it.style} · ${fmt(it.t)}`;
+  meta.append(b, s);
+
+  const act = document.createElement("div"); act.className = "g-act";
+  const dl = document.createElement("a"); dl.className = "btn ghost"; dl.textContent = "Download";
+  dl.href = it.img; dl.download = `sketch-${it.style}.jpg`;
+  const rm = document.createElement("button"); rm.className = "btn danger"; rm.textContent = "Delete";
+  rm.onclick = () => del(it.id, d);
+  act.append(dl, rm);
+
+  d.append(im, meta, act);
+  return d;
+}
+
+function render() {
+  const list = Store.all();
+  $("grid").replaceChildren(...list.map(card));
+  $("empty").classList.toggle("hid", list.length > 0);
+  $("clearAll").classList.toggle("hid", !list.length);
+  $("navCount").textContent = list.length;
+  $("usage").textContent = `${list.length} saved · ${(Store.usage() / 1048576).toFixed(1)} MB of ~5 MB browser storage used`;
+}
+
+async function del(id, el) {
+  if (!confirm("Delete this sketch?")) return;
+  Store.remove(id);
+  if (M) { try { await M.animate(el, {opacity: 0, scale: 0.9}, {duration: 0.25}); } catch {} }
+  render();
+}
+
+$("clearAll").onclick = () => {
+  if (!confirm("Delete ALL saved sketches?")) return;
+  Store.clear(); render();
+};
+
+// lightbox (full screen view)
+function openLB(src) {
+  $("lbImg").src = src; $("lb").classList.add("on");
+  const lb = $("lb"); if (lb.requestFullscreen) lb.requestFullscreen().catch(() => {});
+}
+function closeLB() {
+  $("lb").classList.remove("on");
+  if (document.fullscreenElement) document.exitFullscreen();
+}
+$("lb").onclick = closeLB;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeLB(); });
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) $("lb").classList.remove("on"); });
+
+render();
+if (M) M.animate(".g-card", {opacity: [0, 1], y: [16, 0]}, {delay: M.stagger(0.06), duration: 0.5});
+</script>
+</body>
+</html>
