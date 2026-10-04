@@ -6,6 +6,17 @@
 <title>Graphite — Photo to Pencil Sketch</title>
 <meta name="description" content="Turn any photo into a realistic hand-drawn pencil sketch.">
 <link rel="stylesheet" href="/app.css">
+<style>
+/* ---- mobile / touch fixes ---- */
+.cmp, .cmp input { touch-action: pan-y; }      /* vertical swipe scrolls the page, horizontal drag moves the slider */
+.stage { scroll-margin-top: 76px; }            /* auto-scroll lands just below the sticky header */
+@media (max-width: 900px), (pointer: coarse) {
+  .blob { display: none; }                     /* huge blurred layers make mobile scrolling janky */
+  .card { box-shadow: 0 6px 18px #0005; }
+  .cmp { box-shadow: none; }
+  .load { backdrop-filter: none; background: #0f1115f2; }
+}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
 </head>
 <body>
@@ -99,6 +110,8 @@
 <script>
 const $ = id => document.getElementById(id);
 const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const MOB = matchMedia("(max-width:900px), (pointer:coarse)").matches;   // phones / tablets
+const NARROW = matchMedia("(max-width:900px)");                          // single-column layout
 const M = RM ? null : window.Motion;
 const EASE = [0.22, 1, 0.36, 1];
 if (M) document.documentElement.classList.add("js-motion");
@@ -121,8 +134,10 @@ function intro() {
   M.animate(".scroll-hint", {opacity: [0, 1]}, {delay: 1.9, duration: 0.8});
   // ambient loops
   M.animate(".scroll-hint .arrow", {y: [0, 8, 0]}, {delay: 2, duration: 1.6, repeat: Infinity, ease: "easeInOut"});
-  M.animate(".b1", {x: [0, 60, 0], y: [0, 40, 0]}, {duration: 16, repeat: Infinity, ease: "easeInOut"});
-  M.animate(".b2", {x: [0, -70, 0], y: [0, -30, 0]}, {duration: 20, repeat: Infinity, ease: "easeInOut"});
+  if (!MOB) {                                                    // blurred glows only on desktop (heavy on phones)
+    M.animate(".b1", {x: [0, 60, 0], y: [0, 40, 0]}, {duration: 16, repeat: Infinity, ease: "easeInOut"});
+    M.animate(".b2", {x: [0, -70, 0], y: [0, -30, 0]}, {duration: 20, repeat: Infinity, ease: "easeInOut"});
+  }
   M.animate(".empty svg", {y: [0, -10, 0]}, {duration: 3.4, repeat: Infinity, ease: "easeInOut"});
   // cards slide in when scrolled into view
   M.inView(".reveal", (a) => {
@@ -142,6 +157,11 @@ function goStudio(e) {
     {boxShadow: ["0 0 0 0 #e8b86a00", "0 0 0 7px #e8b86a55", "0 0 0 0 #e8b86a00"]}, {duration: 1.2}), 750);
 }
 document.querySelectorAll('a[href="#studio"]').forEach(a => a.onclick = goStudio);
+
+// on phones the result panel sits below the controls: bring it into view automatically
+function toStage() {
+  if (NARROW.matches) $("stage").scrollIntoView({behavior: RM ? "auto" : "smooth", block: "start"});
+}
 
 function toast(msg, ok) {
   const t = $("toast"); t.textContent = msg; t.className = "toast" + (ok ? " ok" : ""); t.style.display = "block";
@@ -174,6 +194,7 @@ function pick(f) {
 async function run() {
   if (!st.file || st.busy) return;
   st.busy = true; $("go").disabled = true; $("load").classList.add("on");
+  toStage();                                                     // phones: show the image section right away
   const msgs = ["Sharpening the pencil…", "Laying down graphite…", "Adding paper grain…", "Smudging the shadows…"];
   let i = 0; const iv = setInterval(() => $("loadT").textContent = msgs[++i % msgs.length], 1400);
   const fd = new FormData();

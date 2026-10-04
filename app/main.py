@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import cv2
+import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +14,21 @@ MAX_BYTES = 12 * 1024 * 1024
 app = FastAPI(title="Pencil Sketch Studio", docs_url=None, redoc_url=None)
 
 
+def _make_favicon() -> bytes:
+    """Tiny pencil icon drawn at startup, so /favicon.ico never 404s."""
+    img = np.zeros((64, 64, 4), np.uint8)
+    img[:] = (18, 23, 27, 255)                                   # dark brown background
+    body = np.array([[34, 8], [43, 10], [33, 50], [24, 48]], np.int32)
+    tip = np.array([[24, 48], [33, 50], [27, 58]], np.int32)
+    cv2.fillPoly(img, [body], (106, 184, 232, 255))             # amber pencil (BGRA)
+    cv2.fillPoly(img, [tip], (180, 205, 230, 255))              # wood tip
+    ok, buf = cv2.imencode(".png", img)
+    return buf.tobytes()
+
+
+FAVICON = _make_favicon()
+
+
 def _pct(v: float) -> float:
     return max(0.0, min(100.0, v)) / 100
 
@@ -20,6 +36,11 @@ def _pct(v: float) -> float:
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(FAVICON, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.post("/api/sketch")

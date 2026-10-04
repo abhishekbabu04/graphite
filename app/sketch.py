@@ -1,12 +1,13 @@
 """Photo -> realistic pencil sketch. Pure OpenCV + NumPy, no ML weights."""
 import io
+import os
 
 import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
 Image.MAX_IMAGE_PIXELS = 60_000_000  # decompression-bomb guard
-MAX_SIDE = 2000
+MAX_SIDE = int(os.environ.get("MAX_SIDE", 2000))  # set MAX_SIDE=1200 on low-RAM hosts (e.g. Render free)
 STYLES = ("graphite", "charcoal", "colored", "crosshatch")
 PAPER = np.array([0.90, 0.94, 0.97], np.float32)  # warm off-white (BGR)
 
@@ -60,6 +61,7 @@ def render(img, style="graphite", intensity=0.5, detail=0.5, paper=True):
     side = max(h, w)
     f = img.astype(np.float32) / 255
     gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+    gray = np.clip(gray, 0.0, 1.0)  # float rounding can push values just outside 0..1
     charcoal = style == "charcoal"
 
     if style == "crosshatch":
@@ -69,7 +71,8 @@ def render(img, style="graphite", intensity=0.5, detail=0.5, paper=True):
         lines = 0.55 * _line_ink(gray, sigma) + 0.45 * _line_ink(gray, sigma * 0.35)
         lines = np.clip(lines * (1.6 + 2.0 * intensity), 0, 1) ** 0.9
         tone_w = (0.75 if charcoal else 0.25 + 0.5 * intensity) * (0.7 if style == "colored" else 1)
-        tone = (1 - _blur(gray, sigma * 0.5)) ** 1.5
+        # clip BEFORE the power: a tiny negative value ** 1.5 would give NaN
+        tone = np.clip(1.0 - _blur(gray, sigma * 0.5), 0.0, 1.0) ** 1.5
         ink = np.clip(lines + tone * tone_w, 0, 1)
         if charcoal:  # smudge + soft bloom
             ink = np.clip(0.8 * _blur(ink, side * 0.0015) + 0.35 * _blur(ink, side * 0.012), 0, 1)
@@ -100,4 +103,5 @@ def render(img, style="graphite", intensity=0.5, detail=0.5, paper=True):
         cov = np.clip(0.6 + 0.3 * t, 0, 1) * sat * (0.45 + 0.4 * intensity)
         out = out * (1 - cov[..., None] + cov[..., None] * hue)
 
+    out = np.nan_to_num(out, nan=1.0, posinf=1.0, neginf=0.0)  # safety net: never cast NaN to uint8
     return (np.clip(out, 0, 1) * 255).astype(np.uint8)
