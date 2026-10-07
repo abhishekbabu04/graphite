@@ -5,16 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Sketches — Graphite</title>
 <link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/auth.css">
 <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
 </head>
 <body>
 <header class="site-head">
   <div class="wrap">
     <a class="logo" href="/"><i></i>Graphite</a>
-    <nav class="nav">
-      <a href="/">Studio</a>
-      <a class="on" href="/gallery.html">My Sketches<span class="badge" id="navCount">0</span></a>
-    </nav>
+    <div class="head-r">
+      <nav class="nav">
+        <a href="/">Studio</a>
+        <a class="on" href="/gallery.html">My Sketches<span class="badge" id="navCount">0</span></a>
+      </nav>
+    </div>
   </div>
 </header>
 
@@ -37,6 +40,7 @@
 
 <div class="lb" id="lb"><img id="lbImg" alt="Sketch preview"><button class="fsx" id="lbX" aria-label="Close">✕</button></div>
 
+<script src="/auth.js"></script>
 <script src="/store.js"></script>
 <script>
 const $ = id => document.getElementById(id);

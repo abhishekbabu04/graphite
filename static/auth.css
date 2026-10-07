@@ -1,0 +1,31 @@
+/* header login button + user menu */
+.head-r{gap:10px}
+.auth-slot{position:relative;display:flex;align-items:center}
+.auth-login{width:auto;padding:8px 18px;border-radius:99px;font-size:14px;margin:0;white-space:nowrap}
+.auth-user{display:flex;align-items:center;gap:8px;background:#2a241a;border:1px solid #3a2f1e;color:var(--ink);border-radius:99px;padding:4px 14px 4px 4px;cursor:pointer;font:600 13px var(--sans);transition:border-color .2s}
+.auth-user:hover{border-color:var(--acc)}
+.auth-av{width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--acc);color:#1a1408;display:grid;place-items:center;font-weight:700;font-size:14px}
+.auth-name{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auth-menu{display:none;position:absolute;right:0;top:calc(100% + 12px);min-width:230px;background:#1b1f27;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 18px 50px #000a;z-index:40;flex-direction:column;gap:3px}
+.auth-menu.on{display:flex}
+.auth-menu b{font-size:14px}
+.auth-menu span{color:var(--mute);font-size:12px;word-break:break-all;margin-bottom:10px}
+.auth-menu .btn{padding:9px;font-size:13px;margin:0}
+
+/* login modal */
+.auth-modal{position:fixed;inset:0;z-index:100;background:#000b;display:none;align-items:center;justify-content:center;padding:20px}
+.auth-modal.on{display:flex}
+.auth-card{position:relative;width:100%;max-width:380px;text-align:center;background:linear-gradient(180deg,#1f242d,#171a20);border:1px solid var(--line);border-radius:20px;padding:34px 28px 26px;box-shadow:0 30px 80px #000c}
+.auth-x{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:0;background:#ffffff10;color:var(--ink);cursor:pointer;font-size:15px}
+.auth-x:hover{background:#ffffff20}
+.auth-logo{display:inline-flex;align-items:center;gap:9px;font:600 20px var(--serif);margin-bottom:14px}
+.auth-logo i{width:9px;height:22px;background:linear-gradient(var(--acc),#6b5a3a);border-radius:2px 2px 6px 6px;transform:rotate(18deg)}
+.auth-card h3{font:500 26px var(--serif);margin-bottom:6px}
+.auth-card p{color:var(--mute);font-size:14px;margin-bottom:20px}
+.auth-gbtn{display:flex;justify-content:center;min-height:44px}
+.auth-card .auth-err{color:#ffb4b4;font-size:13px;margin:14px 0 0;min-height:0}
+.auth-card small{display:block;color:#6f6c65;font-size:12px;margin-top:18px}
+
+/* small phones: keep the header on one row */
+@media(max-width:640px){.auth-name{display:none}.auth-user{padding:3px}}
+@media(max-width:560px){.btn.cta{display:none}.nav a{padding:7px 10px}}

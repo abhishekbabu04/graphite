@@ -4,3 +4,7 @@ python-multipart
 opencv-python-headless
 numpy
 pillow
+google-auth
+requests
+itsdangerous
+python-dotenv

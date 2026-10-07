@@ -6,6 +6,7 @@
 <title>Graphite — Photo to Pencil Sketch</title>
 <meta name="description" content="Turn any photo into a realistic hand-drawn pencil sketch.">
 <link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/auth.css">
 <style>
 /* ---- mobile / touch fixes ---- */
 .cmp, .cmp input { touch-action: pan-y; }      /* vertical swipe scrolls the page, horizontal drag moves the slider */
@@ -106,6 +107,7 @@
 <footer class="site-foot">Graphite · Your photo is never stored on the server. Saved sketches live only in this browser.</footer>
 <div class="toast" id="toast" role="alert"></div>
 
+<script src="/auth.js"></script>
 <script src="/store.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -193,6 +195,8 @@ function pick(f) {
 
 async function run() {
   if (!st.file || st.busy) return;
+  if (!(await Auth.require("Please log in to create your sketch."))) return;   // Google login first
+  if (st.busy) return;
   st.busy = true; $("go").disabled = true; $("load").classList.add("on");
   toStage();                                                     // phones: show the image section right away
   const msgs = ["Sharpening the pencil…", "Laying down graphite…", "Adding paper grain…", "Smudging the shadows…"];
@@ -203,6 +207,7 @@ async function run() {
   fd.append("paper", $("paper").checked);
   try {
     const r = await fetch("/api/sketch", {method: "POST", body: fd});
+    if (r.status === 401) { Auth.expired(); throw new Error("Session expired. Please log in again."); }
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Something went wrong");
     const blob = await r.blob();
     if (st.url) URL.revokeObjectURL(st.url);
