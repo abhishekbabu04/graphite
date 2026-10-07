@@ -1,8 +1,12 @@
 /* Sign in with Google: header button, login modal, session handling.
    Shared by the Studio and My Sketches pages. Exposes a global `Auth`. */
+
+// Google login only accepts registered origins; use "localhost" instead of the raw IP while developing.
+if (location.hostname === "127.0.0.1") location.replace(location.href.replace("//127.0.0.1", "//localhost"));
+
 const Auth = (() => {
   let user = null, cfg = {google_client_id: ""}, gsiP = null, inited = false;
-  let modal = null, slot = null, msgEl = null, errEl = null, cardEl = null;
+  let modal = null, slot = null, msgEl = null, errEl = null, devEl = null, cardEl = null;
   let waiters = [];
 
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt) e.textContent = txt; return e; };
@@ -64,9 +68,11 @@ const Auth = (() => {
       '<p class="auth-msg"></p>' +
       '<div class="auth-gbtn"></div>' +
       '<p class="auth-err"></p>' +
-      '<small>We only use your name, email and photo to sign you in.</small></div>';
+      '<small>We only use your name, email and photo to sign you in.</small>' +
+      '<small class="auth-dev" style="display:none"></small></div>';
     document.body.append(modal);
-    cardEl = modal.querySelector(".auth-card"); msgEl = modal.querySelector(".auth-msg"); errEl = modal.querySelector(".auth-err");
+    cardEl = modal.querySelector(".auth-card"); msgEl = modal.querySelector(".auth-msg");
+    errEl = modal.querySelector(".auth-err"); devEl = modal.querySelector(".auth-dev");
     modal.querySelector(".auth-x").onclick = () => closeModal(false);
     modal.addEventListener("click", e => { if (e.target === modal) closeModal(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.classList.contains("on")) closeModal(false); });
@@ -75,6 +81,10 @@ const Auth = (() => {
     if (!modal) buildModal();
     msgEl.textContent = msg || "Log in with your Google account to create sketches.";
     errEl.textContent = "";
+    if (location.hostname === "localhost") {           // developer hint, only on localhost
+      devEl.textContent = "Dev note: add " + location.origin + " and http://localhost to \u201CAuthorized JavaScript origins\u201D in Google Cloud Console.";
+      devEl.style.display = "block";
+    }
     modal.classList.add("on");
     const m = window.Motion;
     if (m && !matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -115,7 +125,11 @@ const Auth = (() => {
   // ---- public API ----
   async function init() {
     const head = document.querySelector(".head-r");
-    slot = el("div", "auth-slot"); if (head) head.append(slot);
+    slot = el("div", "auth-slot");
+    if (head) {                                         // sits right after "My Sketches", before the "Start sketching" button
+      const cta = head.querySelector(".cta");
+      cta ? head.insertBefore(slot, cta) : head.append(slot);
+    }
     try { cfg = await api("/api/config"); } catch {}
     try { user = (await api("/api/me")).user; } catch {}
     renderSlot();

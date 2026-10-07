@@ -43,6 +43,16 @@ app.add_middleware(
 _G_REQUEST = g_requests.Request()
 
 
+class NoCacheStatic(StaticFiles):
+    """Static files that the browser must re-check every time (fast 304 if unchanged),
+    so a new deploy / edited file is never hidden behind a stale cached copy."""
+
+    async def get_response(self, path, scope):
+        resp = await super().get_response(path, scope)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 def _make_favicon() -> bytes:
     """Tiny pencil icon drawn at startup, so /favicon.ico never 404s."""
     img = np.zeros((64, 64, 4), np.uint8)
@@ -147,4 +157,4 @@ def sketch(
     return Response(buf.tobytes(), media_type="image/png", headers={"Cache-Control": "no-store"})
 
 
-app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
+app.mount("/", NoCacheStatic(directory=STATIC, html=True), name="static")
